@@ -1,7 +1,7 @@
 package com.filipealves.pomodoro.model;
 
 /**
- * Created by Filipe on 28/09/16.
+ * Attempt class to run for a specific time some kind of attempt (AttemptKind).
  */
 public class Attempt {
     private String mMessage;
