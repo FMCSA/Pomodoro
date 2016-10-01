@@ -29,4 +29,8 @@ public class Attempt {
     public void setMessage(String message) {
         this.mMessage = message;
     }
+
+    public void tick() {
+        mRemainingSeconds--;
+    }
 }

@@ -21,6 +21,6 @@ public enum AttemptKind {
     }
 
     public String getDisplayName() {
-        return null;
+        return mDisplayName;
     }
 }
