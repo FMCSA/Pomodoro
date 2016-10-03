@@ -2,6 +2,7 @@ package com.filipealves.pomodoro.controllers;
 
 import com.filipealves.pomodoro.model.Attempt;
 import com.filipealves.pomodoro.model.AttemptKind;
+import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.beans.property.SimpleStringProperty;
@@ -9,7 +10,9 @@ import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.AudioClip;
 import javafx.util.Duration;
 
 /**
@@ -20,20 +23,23 @@ public class Home {
     private VBox container;
     @FXML
     private Label title;
+    @FXML
+    private TextArea message;
 
+    private final AudioClip mApplause;
     private Attempt mCurrentAttempt;
     private StringProperty mTimerText;
-    // The Animation Timeline
     private Timeline mTimeline;
 
     public Home() {
         mTimerText = new SimpleStringProperty();
         setTimerText(0);
+        mApplause = new AudioClip(getClass().getResource("/sounds/applause.mp3").toExternalForm());
     }
 
     private void prepareAttempt(AttemptKind kind) {
-        // Clears the style of the current Attempt
-        clearAttemptStyles();
+        reset();
+
         // Changes to new Attempt
         mCurrentAttempt = new Attempt("", kind);
 
@@ -49,13 +55,37 @@ public class Home {
             mCurrentAttempt.tick();
             setTimerText(mCurrentAttempt.getRemainingSeconds());
         }));
+
+        // Fire an event when timeline finishes
+        mTimeline.setOnFinished(e -> {
+            saveCurrentAttempt();
+            mApplause.play();
+            prepareAttempt(mCurrentAttempt.getKind() == AttemptKind.FOCUS ?
+                    AttemptKind.BREAK : AttemptKind.FOCUS);
+        });
+    }
+
+    private void saveCurrentAttempt() {
+        mCurrentAttempt.setMessage(message.getText());
+        mCurrentAttempt.save();
+    }
+
+    private void reset() {
+        // Clears the style of the current Attempt
+        clearAttemptStyles();
+
+        if(mTimeline != null && mTimeline.getStatus() == Animation.Status.RUNNING) {
+            mTimeline.stop();
+        }
     }
 
     public void playTimer() {
+        container.getStyleClass().add("playing");
         mTimeline.play();
     }
 
     public void pauseTimer() {
+        container.getStyleClass().remove("playing");
         mTimeline.pause();
     }
 
@@ -66,6 +96,7 @@ public class Home {
 
     // Loop through enum a pop if off
     private void clearAttemptStyles() {
+        container.getStyleClass().remove("playing");
         for(AttemptKind kind : AttemptKind.values()) {
             container.getStyleClass().remove(kind.toString().toLowerCase());
         }
@@ -94,5 +125,19 @@ public class Home {
     public void handleRestart(ActionEvent actionEvent) {
         prepareAttempt(AttemptKind.FOCUS);
         playTimer();
+    }
+
+    public void handlePlay(ActionEvent actionEvent) {
+        // If there's not a current attempt running we restart it and prepare an attempt
+        if(mCurrentAttempt == null) {
+            handleRestart(actionEvent);
+        }
+        else {
+            playTimer();
+        }
+    }
+
+    public void handlePause(ActionEvent actionEvent) {
+        pauseTimer();
     }
 }
